@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ladder-like UI with Chatbot</title>
+  <!-- Include the Marked library for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* -------------------------
+       Main UI (Ladder-like) Styles
+       ------------------------- */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+    }
+    header {
+      background-color: #007bff;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background-color: #0056b3;
+      padding: 10px;
+      display: flex;
+      justify-content: space-around;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+    }
+    /* Chat Button Style */
+    .chat-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 15px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* -------------------------
+       Chat Modal Styles
+       ------------------------- */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background: white;
+      margin: 10% auto;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 450px;
+      position: relative;
+      padding: 0;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+      background-color: #007bff;
+      color: white;
+      padding: 15px;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .close {
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .chat-box {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+    .message {
+      padding: 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+      max-width: 80%;
+      word-wrap: break-word;
+      clear: both;
+    }
+    .user {
+      background-color: #007bff;
+      color: white;
+      align-self: flex-end;
+      float: right;
+    }
+    .assistant {
+      background-color: #e9ecef;
+      color: black;
+      align-self: flex-start;
+      float: left;
+    }
+    .input-container {
+      display: flex;
+    }
+    .input-container input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .input-container button {
+      padding: 10px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    @keyframes dots-animation {
+      0%, 20% { opacity: 0; }
+      50% { opacity: 1; }
+      80%, 100% { opacity: 0; }
+    }
+
+    .thinking .dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .thinking .dots span {
+      font-size: 24px;
+      margin: 0 2px;
+      animation: dots-animation 1.4s infinite;
+    }
+
+    .thinking .dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .thinking .dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Existing Ladder Website Content -->
+  <div class="content">
+    <iframe src="https://cssa.cc.ncku.edu.tw/ladder/app/en/" width="100%" height="915px" frameborder="0"></iframe>
+  </div>
+
+  <!-- Chat Button -->
+  <button class="chat-button" id="openChatBtn">Chat</button>
+
+  <!-- Chat Modal -->
+  <div id="chatModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Chat</h2>
+        <span class="close" id="closeChatBtn">&times;</span>
+      </div>
+      <div class="chat-container">
+        <div class="chat-box" id="chat-box"></div>
+        <div class="input-container">
+          <input type="text" id="message" placeholder="Type a message..." required>
+          <button onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- --------------------------
+       JavaScript for Modal and Chat
+       -------------------------- -->
+  <script>
+    // Modal functionality
+    const chatModal = document.getElementById('chatModal');
+    const openChatBtn = document.getElementById('openChatBtn');
+    const closeChatBtn = document.getElementById('closeChatBtn');
+    const messageInput = document.getElementById('message');
+
+    openChatBtn.addEventListener('click', () => {
+      chatModal.style.display = 'block';
+      messageInput.focus(); // Auto-focus the input when chat opens
+    });
+
+    closeChatBtn.addEventListener('click', () => {
+      chatModal.style.display = 'none';
+    });
+
+    // Close modal if user clicks outside modal-content
+    window.addEventListener('click', (event) => {
+      if (event.target === chatModal) {
+        chatModal.style.display = 'none';
+      }
+    });
+
+    // Add event listener for Enter key
+    messageInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent default form submission
+        sendMessage();
+      }
+    });
+
+    // Chat functionality
+    async function sendMessage() {
+      const chatBox = document.getElementById('chat-box');
+      const message = messageInput.value.trim();
+      if (!message) return;
+      
+      // Append user message to chat
+      const userMessage = document.createElement('div');
+      userMessage.classList.add('message', 'user');
+      userMessage.textContent = message;
+      chatBox.appendChild(userMessage);
+      messageInput.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
+      
+      // Create thinking indicator
+      const thinkingMessage = document.createElement('div');
+      thinkingMessage.classList.add('message', 'assistant', 'thinking');
+      thinkingMessage.innerHTML = '<div class="dots"><span>.</span><span>.</span><span>.</span></div>';
+      chatBox.appendChild(thinkingMessage);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      
+      try {
+        const response = await fetch('/chat', {  // Adjust the endpoint as needed
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `message=${encodeURIComponent(message)}`
+        });
+
+        // Remove thinking indicator
+        chatBox.removeChild(thinkingMessage);
+      
+        // Create AI response container and variable to accumulate markdown text
+        const assistantMessage = document.createElement('div');
+        assistantMessage.classList.add('message', 'assistant');
+        chatBox.appendChild(assistantMessage);
+        let assistantMarkdown = '';
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          assistantMarkdown += decoder.decode(value);
+          // Use marked to parse the accumulated markdown and update innerHTML
+          assistantMessage.innerHTML = marked.parse(assistantMarkdown);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+      } catch (error) {
+        console.error('Error communicating with the chat API:', error);
+        // Remove thinking indicator if there's an error
+        if (document.contains(thinkingMessage)) {
+          chatBox.removeChild(thinkingMessage);
+        }
+        // Optionally display an error message in the chat UI
+        const errorMessage = document.createElement('div');
+        errorMessage.classList.add('message', 'assistant');
+        errorMessage.textContent = "Oops! There was an error. Please try again later.";
+        chatBox.appendChild(errorMessage);
+      }
+    }
+  </script>
+</body>
+</html>

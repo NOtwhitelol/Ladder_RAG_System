@@ -1,0 +1,10 @@
+from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("intfloat/multilingual-e5-small")
+
+document_text = """"summary": "### Section Title: \"Ladder and NOM: Simplifying Neural Network Development\"\n\n**Overview**\n\n* Ladder and NOM are complementary frameworks designed to simplify neural network training and analysis.\n* They provide an intuitive workflow for both beginners and researchers by integrating graphical model building with streamlined Python-based execution.\n\n**Key Components**\n\n#### **Ladder: A Graphical Interface for Neural Networks**\n\n* Provides a drag-and-drop GUI for designing and visualizing neural networks, removing the need for complex coding.\n* Useful for:\n\t+ Beginners: Simplifies model creation without programming expertise.\n\t+ Research Projects: Facilitates architectural experimentation.\n\t+ Data Analysis: Provides clear model structure visualization.\n\t+ Education: Enhances interactive learning of deep learning concepts.\n\n#### **NOM: A Python-Based Neural Network Library**\n\n* Built on top of TensorFlow, abstracts low-level details for streamlined neural network development.\n* Key features:\n\t+ Configuration-Based Modeling: Reduces extensive coding needs.\n\t+ Seamless Ladder Integration: Converts Ladder’s visual models into TensorFlow-compatible code.\n\t+ Simplified Training & Inference: Streamlines hyperparameter tuning and execution.\n\t+ Framework Independence: Can adapt to other deep learning libraries.\n\n**How They Work Together**\n\n1. **Model Creation**: Users design neural networks in Ladder.\n2. **Translation**: NOM converts the graphical model into TensorFlow code.\n3. **Training & Execution**: NOM trains the model efficiently.\n4. **Visualization**: Ladder displays results for analysis.\n\nBy combining Ladder’s graphical capabilities with NOM’s streamlined Python API, this framework reduces the complexity of neural network development, making deep learning more accessible to a wider audience."
+"""
+
+tokens = tokenizer(document_text, return_tensors="pt", truncation=False)["input_ids"]
+num_tokens = tokens.shape[1]
+print(f"Total tokens: {num_tokens}")
