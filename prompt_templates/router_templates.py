@@ -324,6 +324,9 @@ Answer: yes
 Question: What are the ethical implications of AI-generated content?
 Answer: no
 
+Question: 用繁體中文回答
+Answer: no
+
 Question: Find the best libraries for handling missing data in Python in 2024
 Answer: yes
 

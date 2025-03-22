@@ -1,5 +1,5 @@
 FROM llama3.1
 
-PARAMETER temperature 0.1
+PARAMETER temperature 0.01
 
 PARAMETER num_ctx 4096
