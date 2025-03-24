@@ -127,15 +127,21 @@
       padding: 20px;
     }
 
+<<<<<<< HEAD
     /* Add this to your CSS to ensure messages stack properly */
     .chat-box {
       height: 400px; /* Lower height as requested */
+=======
+    .chat-box {
+      height: 500px; /* Increased from 400px */
+>>>>>>> eaac3e6d1af83a393234a9b79ba13a53a06742c2
       overflow-y: auto;
       border: 1px solid #e5e7eb;
       padding: 15px;
       margin-bottom: 15px;
       border-radius: 8px;
       background-color: #f9fafb;
+<<<<<<< HEAD
       display: flex;
       flex-direction: column; /* Stack messages vertically */
     }
@@ -152,6 +158,19 @@
       animation: fadeIn 0.3s ease;
       align-self: flex-start; /* Default alignment */
       clear: both; /* This is crucial - it ensures each message appears below the previous one */
+=======
+    }
+
+    .message {
+      padding: 14px 18px; /* Increased padding */
+      border-radius: 18px;
+      margin: 10px 0; /* Increased margin */
+      max-width: 85%; /* Slightly wider messages */
+      font-size: 16px; /* Larger font */
+      line-height: 1.5;
+      position: relative;
+      animation: fadeIn 0.3s ease;
+>>>>>>> eaac3e6d1af83a393234a9b79ba13a53a06742c2
     }
 
     /* For desktop screens, make the modal even larger */
@@ -162,7 +181,11 @@
       }
       
       .chat-box {
+<<<<<<< HEAD
         height: 450px; /* Taller on big screens */
+=======
+        height: 550px; /* Taller on big screens */
+>>>>>>> eaac3e6d1af83a393234a9b79ba13a53a06742c2
       }
     }
 
@@ -175,7 +198,11 @@
       }
       
       .chat-box {
+<<<<<<< HEAD
         height: 50vh; /* Responsive height */
+=======
+        height: 60vh; /* Responsive height */
+>>>>>>> eaac3e6d1af83a393234a9b79ba13a53a06742c2
       }
     }
 
@@ -188,17 +215,31 @@
       background-color: #2563eb;
       color: white;
       align-self: flex-end;
+<<<<<<< HEAD
       margin-left: auto; /* Push to right side */
       border-bottom-right-radius: 4px;
     }
 
     /* Override alignment for assistant messages */
+=======
+      float: right;
+      border-bottom-right-radius: 4px;
+      margin-left: 20%;
+    }
+
+>>>>>>> eaac3e6d1af83a393234a9b79ba13a53a06742c2
     .assistant {
       background-color: #e5e7eb;
       color: #1f2937;
       align-self: flex-start;
+<<<<<<< HEAD
       margin-right: auto; /* Push to left side */
       border-bottom-left-radius: 4px;
+=======
+      float: left;
+      border-bottom-left-radius: 4px;
+      margin-right: 20%;
+>>>>>>> eaac3e6d1af83a393234a9b79ba13a53a06742c2
     }
 
     .message::after {
@@ -259,11 +300,14 @@
       fill: white;
     }
 
+<<<<<<< HEAD
     .thinking {
       padding: 10px 15px; /* Smaller padding for the thinking indicator */
       min-height: 24px; /* Ensure minimum height */
     }
 
+=======
+>>>>>>> eaac3e6d1af83a393234a9b79ba13a53a06742c2
     .thinking .dots {
       display: flex;
       justify-content: center;
