@@ -11,12 +11,10 @@ import os
 load_dotenv()
 HUGGING_FACE_TOKEN = os.getenv("HUGGING_FACE_TOKEN")
 
-# 讀取 Metadata JSON 檔案
 def load_metadata(json_path):
     with open(json_path, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-# 讀取 Markdown 文件
 def load_markdown(md_path):
     with open(md_path, 'r', encoding='utf-8') as file:
         return file.read()
@@ -103,8 +101,7 @@ def DB_search_router(query):
         return DB_search_router(query)
 
 def Run_DB_RAG(chat_history, follow_up_question, standalone_query):
-    result_simi = db.similarity_search(standalone_query , k = 3)
-    source_knowledge = "\n\n".join([x.page_content for x in result_simi])
+    source_knowledge = search_DB(standalone_query, db, document_list)
 
     template = chat_history.copy()
     template = template + response_templates.DB_RESPONSE_TEMPLATE(source_knowledge, follow_up_question)
