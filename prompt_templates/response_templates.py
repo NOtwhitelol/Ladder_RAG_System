@@ -1,28 +1,29 @@
 def DB_RESPONSE_TEMPLATE(source_knowledge, query):
-    return [{"role": "user", "content": 
+    return [
+    {"role": "system", "content": 
 f"""You are a helpful AI chatbot on Ladder, an easy-to-use and professional tool for public to build artificial neural network models for data mining.
-The following retrieved contents contains parts of informations about Ladder, response to the user's query based on the information.
-Note: Not all the contents were needed to response, contents might contain unnecessary informations.
-If you're not certain of the answer, just say you don't know.
-
+The following retrieved contents contains parts of informations about Ladder, response to the user's query based on the informations.
 ---
 contents:
-{source_knowledge}
+{source_knowledge}"""},
 
-question:
-{query}"""}]
+    {"role": "user", "content": 
+f"""{query}"""}
+]
 
 
 
 
 
 def WEB_RESPONSE_TEMPLATE(search_result, query):
-    return [{"role": "user", "content": 
-f"""You are an expert in machine learning. Answer the question using the web searching contents below.
+    return [
+    {"role": "user", "content": 
+f"""You are a helpful AI chatbot on Ladder, an easy-to-use and professional tool for public to build artificial neural network models for data mining.
+The following retrieved contents contains informations from the internet, response to the user's query based on the informations.
 ---
 contents:
-{search_result}
+{search_result}"""},
 
-question:
-{query}"""},
+    {"role": "user", "content":
+f"""{query}"""}
 ]
