@@ -2,12 +2,14 @@ from flask import Flask, render_template, request, Response
 from utils import base, database, web
 
 def RAG_Run(chat_history, follow_up_question, standalone_query):
-    print("running")
+    print("Running")
     if base.Router(standalone_query):
         print("Closed domain query\n")
-        if database.DB_search_router(standalone_query):
+        related_section_indices = database.DB_search_router(standalone_query)
+
+        if len(related_section_indices) > 0:
             print("Using database...\n")
-            return database.Run_DB_RAG(chat_history, follow_up_question, standalone_query)
+            return database.Run_DB_RAG(chat_history, follow_up_question, related_section_indices)
         else:
             chat_history.append({"role": "assistant", "content": "Unable to answer."})
             return "Unable to answer."

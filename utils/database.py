@@ -45,8 +45,9 @@ def build_vector_store(metadata_list):
     db = FAISS.from_documents(docs, embedding_model)
     return db
 
-def get_corresponding_document(indices, strings):
-    return "\n\n---\n\n".join("### " + strings[int(i)] for i in indices if int(i) < len(strings))
+def get_corresponding_document(indices, documents):
+    return ["### " + documents[int(i)] for i in indices if int(i) < len(documents)]
+
 
 json_path = "docs/metadata.json"
 md_path = "docs/Ladder_RAG_document.md"
@@ -63,8 +64,8 @@ embedding_model = HuggingFaceInferenceAPIEmbeddings(
 
 db = build_vector_store(metadata_list)
 
-def search_DB(query, db, document_list):
-    search_results = db.similarity_search(query, k=3)
+def search_DB(query, db):
+    search_results = db.similarity_search(query, k=6)
 
     matched_sections = []
     for result in search_results:
@@ -72,39 +73,38 @@ def search_DB(query, db, document_list):
         if "section" in result_data:
             matched_sections.append(result_data["section"])
             
-    print(f"matched_sections: {matched_sections}")
-
-    # Return the corresponding document section
-    source_knowledge = get_corresponding_document(matched_sections, document_list)
-    return source_knowledge
+    return matched_sections
 
 def DB_search_router(query):
-    source_knowledge = search_DB(query, db, document_list)
-    print(f"Source knowledge: \n{source_knowledge}\n")
-    
-    template = router_templates.DB_ROUTER_TEMPLATE(source_knowledge, query)
-    
-    response = ollama.chat(
-        model="ladder_llama3.1",
-        messages=template
-    )
-    answer = response['message']['content'].lower()
-    
-    try: 
-        if 'yes' in answer:
-            return True
-        elif 'no' in answer:
-            return False
-    
-    except Exception as e:
-        print(f"Error occurred in DB search router: {e}")
-        return DB_search_router(query)
+    section_indices = search_DB(query, db)
+    print(f"Top 6 sections: {section_indices}\n")
 
-def Run_DB_RAG(chat_history, follow_up_question, standalone_query):
-    source_knowledge = search_DB(standalone_query, db, document_list)
+    source_documents = get_corresponding_document(section_indices, document_list)
+
+    related_section_indices = []
+
+    for index, document in zip(section_indices, source_documents):
+        template = router_templates.DB_ROUTER_TEMPLATE(document, query)
+        response = ollama.chat(
+            model="ladder_llama3.1",
+            messages=template
+        )
+        answer = response['message']['content'].lower()
+        
+        if 'yes' in answer:
+            related_section_indices.append(index)
+            if len(related_section_indices) == 3:
+                break
+    print(f"Related sections: {related_section_indices}")
+    return related_section_indices
+
+def Run_DB_RAG(chat_history, follow_up_question, related_section_indices):
+    related_document_list = get_corresponding_document(related_section_indices, document_list)
+    documents = "\n\n---\n\n".join("### " + document for document in related_document_list)
+    print(f"Related Documents: \n{documents}\n")
 
     template = chat_history.copy()
-    template = template + response_templates.DB_RESPONSE_TEMPLATE(source_knowledge, follow_up_question)
+    template = template + response_templates.DB_RESPONSE_TEMPLATE(documents, follow_up_question)
 
     response = ollama.chat(
         model="ladder_llama3.1",

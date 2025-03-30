@@ -243,18 +243,18 @@ Answer: """},
 
 
 
-
-def DB_ROUTER_TEMPLATE(source_knowledge, query): 
+"""Check one document section at a time."""
+def DB_ROUTER_TEMPLATE(document, query): 
     return [{"role": "user", "content":
-f"""The following retrieved content may contain information about Ladder, a beginner-friendly tool for building artificial neural networks.
-Your task is to determine whether the content is relevant and necessary for answering the user's query regarding Ladder.
+f"""The following retrieved content contain information about Ladder, a beginner-friendly tool for building artificial neural networks.
+Your task is to determine whether the content is relevant and necessary for answering the query regarding Ladder.
 Note:
 1. The focus should be on whether the content provides useful or required information related to Ladder's platform, features, or usage.
-2. This is a True or False question. Respond only with "Yes" if the content is relevant and necessary, or "No" if it is not.
+2. This is a True or False question. Respond **only** with "Yes" if the content is relevant and necessary, or "No" if it is not.
 
 ---
 ### contents:
-{source_knowledge}
+{document}
 ### query:
 {query}"""},
 ]
