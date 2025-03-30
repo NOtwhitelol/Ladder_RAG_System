@@ -1,3 +1,9 @@
+"""
+Extract metadata (generate summaries) from the Ladder document.
+The main function will not extract metadata; you need to manually run this code after modifying the document. Otherwise, the document and metadata may become inconsistent.
+"""
+
+
 import json
 import ollama
 
@@ -116,15 +122,17 @@ def generate_metadata(document: str):
     
     return json.dumps(metadata, indent=4, ensure_ascii=False)
 
-# Read document from file
-with open("docs/Ladder_RAG_document.md", "r", encoding="utf-8") as file:
-    document_text = file.read()
 
-# Generate metadata
-metadata_json = generate_metadata(document_text)
+if __name__ == "__main__":
+    # Read document from file
+    with open("docs/Ladder_RAG_document.md", "r", encoding="utf-8") as file:
+        document_text = file.read()
 
-# Save metadata to JSON file
-with open("docs/metadata.json", "w", encoding="utf-8") as file:
-    file.write(metadata_json)
+    # Generate metadata
+    metadata_json = generate_metadata(document_text)
 
-print("Metadata extraction complete. Saved to metadata.json")
+    # Save metadata to JSON file
+    with open("docs/metadata.json", "w", encoding="utf-8") as file:
+        file.write(metadata_json)
+
+    print("Metadata extraction complete. Saved to metadata.json")

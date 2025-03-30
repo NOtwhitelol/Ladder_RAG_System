@@ -31,16 +31,23 @@ def recursive_split(text, delimiter):
     
     return [before_delimiter] + recursive_split(after_delimiter, delimiter)
 
-# 建立 FAISS 向量資料庫（索引 metadata）
+# Build FAISS database from metadata
 def build_vector_store(metadata_list):
-    docs = [
-        Document(page_content=json.dumps({"title": meta["title"], "summary": meta["summary"]}))
-        for meta in metadata_list
-    ]
+    docs = []
+    for i, meta in enumerate(metadata_list):
+        docs.append(
+            Document(
+                page_content=json.dumps({
+                    "title": meta["title"], 
+                    "summary": meta["summary"],
+                    "section": meta["section"]
+                })
+            )
+        )
     db = FAISS.from_documents(docs, embedding_model)
     return db
 
-def get_corresponding_strings(indices, strings):
+def get_corresponding_document(indices, strings):
     return "\n\n---\n\n".join("### " + strings[int(i)] for i in indices if int(i) < len(strings))
 
 json_path = "docs/metadata.json"
@@ -48,7 +55,7 @@ md_path = "docs/Ladder_RAG_document.md"
 
 metadata_list = load_metadata(json_path)
 md_text = load_markdown(md_path)
-split_result = recursive_split(md_text, "###")
+document_list = recursive_split(md_text, "###")
 
 embedding_model = HuggingFaceInferenceAPIEmbeddings(
     api_key=HUGGING_FACE_TOKEN,
@@ -58,27 +65,23 @@ embedding_model = HuggingFaceInferenceAPIEmbeddings(
 
 db = build_vector_store(metadata_list)
 
-def search_DB(query, db, metadata_list, split_result):
-    # 在 metadata 上進行相似度檢索
-    result_simi = db.similarity_search(query, k=3)
+def search_DB(query, db, document_list):
+    search_results = db.similarity_search(query, k=3)
 
-    # 匹配 metadata，找到對應的原始內容
     matched_sections = []
-    for result in result_simi:
-        metadata = json.loads(result.page_content)
-        for meta in metadata_list:
-            if meta["summary"] == metadata["summary"]:
-                matched_sections.append(meta["section"])  # section_link 存的是原始內容
-                break
+    for result in search_results:
+        result_data = json.loads(result.page_content)
+        if "section" in result_data:
+            matched_sections.append(result_data["section"])
+            
     print(f"matched_sections: {matched_sections}")
 
-    # 輸出最終結果
-    source_knowledge = get_corresponding_strings(matched_sections, split_result)
-    # print(f"Source knowledge: \n{source_knowledge}\n")
+    # Return the corresponding document section
+    source_knowledge = get_corresponding_document(matched_sections, document_list)
     return source_knowledge
 
 def DB_search_router(query):
-    source_knowledge = search_DB(query, db, metadata_list, split_result)
+    source_knowledge = search_DB(query, db, document_list)
     print(f"Source knowledge: \n{source_knowledge}\n")
     
     template = router_templates.DB_ROUTER_TEMPLATE(source_knowledge, query)

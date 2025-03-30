@@ -10,7 +10,7 @@ Ladder is a graphical user interface (GUI) designed for building, managing, and 
   * Educational purposes: Offers an interactive way for students and instructors to learn and teach deep learning concepts.
 
 **NOM: A Python-Based Neural Network Library**  
-NOM is a Python library built on top of TensorFlow, designed to streamline neural network development by providing a simplified, easy-to-read API. Unlike raw TensorFlow, which requires extensive coding knowledge and complex configurations, NOM abstracts many low-level details, allowing users to focus on model design and experimentation.
+NOM (Neural Object Model) is a Python library built on top of TensorFlow, designed to streamline neural network development by providing a simplified, easy-to-read API. Unlike raw TensorFlow, which requires extensive coding knowledge and complex configurations, NOM abstracts many low-level details, allowing users to focus on model design and experimentation.
 Key features of NOM include:
 
   * Configuration-Based Modeling: Users can define models using structured configurations instead of writing extensive code.
