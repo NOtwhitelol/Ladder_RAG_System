@@ -4,8 +4,11 @@ import json
 
 def standalone_query_rewrite(chat_history, query):
     response = ollama.chat(
-        model="ladder_llama3.1",
-        messages=rewrite_templates.STANDALONE_QUESTION_REWRITE_TEMPLATE(chat_history, query)
+        model="llama3.1",
+        messages=rewrite_templates.STANDALONE_QUESTION_REWRITE_TEMPLATE(chat_history, query),
+        options={
+            "temperature": 0.1
+        }
     )
     print(f"Rewrite Query: {response['message']['content']}")
 
@@ -20,8 +23,11 @@ def Router(query):
     template = router_templates.ROUTER_TEMPLATE(query)
     
     response = ollama.chat(
-        model="ladder_llama3.1",
-        messages=template
+        model="llama3.1",
+        messages=template,
+        options={
+            "temperature": 0.1
+        }
     )
     answer = response['message']['content']
     try:
@@ -36,13 +42,18 @@ def Router(query):
 
 
 def Run_Direct_RAG(chat_history, follow_up_question, standalone_query):
-    template = chat_history.copy()
+    template = chat_history.copy()[:-1] # remove the latest user message
     template.append({"role": "user", "content": follow_up_question})
     
+    # print(template)
+    
     response = ollama.chat(
-        model="ladder_llama3.1",
+        model="llama3.1",
         messages=template,
-        stream=True
+        stream=True,
+        options={
+            "temperature": 0.1
+        }
     )
 
     full_response = ""

@@ -86,8 +86,11 @@ def DB_search_router(query):
     for index, document in zip(section_indices, source_documents):
         template = router_templates.DB_ROUTER_TEMPLATE(document, query)
         response = ollama.chat(
-            model="ladder_llama3.1",
-            messages=template
+            model="llama3.1",
+            messages=template,
+            options={
+            "temperature": 0.1
+        }
         )
         answer = response['message']['content'].lower()
         
@@ -103,13 +106,18 @@ def Run_DB_RAG(chat_history, follow_up_question, related_section_indices):
     documents = "\n\n---\n\n".join("### " + document for document in related_document_list)
     print(f"Related Documents: \n{documents}\n")
 
-    template = chat_history.copy()
+    template = chat_history.copy()[:-1] # remove the latest user message
     template = template + response_templates.DB_RESPONSE_TEMPLATE(documents, follow_up_question)
 
+    # print(template)
+
     response = ollama.chat(
-        model="ladder_llama3.1",
+        model="llama3.1",
         messages=template,
-        stream=True
+        stream=True,
+        options={
+            "temperature": 0.1
+        }
     )
 
     full_response = ""

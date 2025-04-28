@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ladder-like UI with Chatbot</title>
+  <title>Ladder with Chatbot</title>
   <!-- Include the Marked library for Markdown parsing -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
@@ -157,12 +157,12 @@
     /* For desktop screens, make the modal even larger */
     @media (min-width: 1024px) {
       .modal-content {
-        max-width: 750px; /* Even larger on big screens */
+        max-width: 750px;
         margin: 4% auto;
       }
       
       .chat-box {
-        height: 550px; /* Taller on big screens */
+        height: 550px;
       }
     }
 
@@ -175,7 +175,7 @@
       }
       
       .chat-box {
-        height: 60vh; /* Responsive height */
+        height: 60vh;
       }
     }
 
@@ -188,7 +188,7 @@
       background-color: #2563eb;
       color: white;
       align-self: flex-end;
-      margin-left: auto; /* Push to right side */
+      margin-left: auto;
       border-bottom-right-radius: 4px;
       word-wrap: break-word;
       overflow-wrap: break-word;
@@ -201,7 +201,7 @@
       background-color: #e5e7eb;
       color: #1f2937;
       align-self: flex-start;
-      margin-right: auto; /* Push to left side */
+      margin-right: auto;
       border-bottom-left-radius: 4px;
       max-width: 70%; /* Ensures content doesn't exceed container width */
       
@@ -219,25 +219,25 @@
       display: flex;
       background-color: #f9fafb;
       border-radius: 8px;
-      padding: 8px; /* Increased padding */
+      padding: 8px;
       border: 1px solid #e5e7eb;
-      margin-bottom: 15px; /* Added bottom margin */
+      margin-bottom: 15px;
     }
 
     /* Use textarea with fixed height by default */
     .input-container textarea {
       flex: 1;
-      padding: 14px 18px; /* Larger padding */
+      padding: 14px 18px;
       border: none;
       background: transparent;
       outline: none;
-      font-size: 16px; /* Larger font */
-      resize: none; /* Disable manual resize */
-      font-family: Arial, sans-serif; /* Match body font */
-      height: 24px; /* Fixed height by default */
+      font-size: 16px;
+      resize: none;
+      font-family: Arial, sans-serif;
+      height: 24px;
       line-height: 1.2;
       overflow-y: hidden; /* Hide scrollbar when not needed */
-      max-height: 150px; /* Limit max height */
+      max-height: 150px;
       transition: height 0.1s ease;
     }
 

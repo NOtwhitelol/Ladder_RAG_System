@@ -13,8 +13,11 @@ client = TavilyClient(api_key=TAVILY_API_KEY)
 def Web_query_rewrite(query):
     template = rewrite_templates.WEB_QUERY_REWRITE_TEMPLATE(query)
     response = ollama.chat(
-        model="ladder_llama3.1",
-        messages=template
+        model="llama3.1",
+        messages=template,
+        options={
+            "temperature": 0.1
+        }
     )
     try:
         answer = json.loads(response['message']['content'])
@@ -30,8 +33,11 @@ def Web_query_rewrite(query):
 def Web_search_router(query):
     template = router_templates.WEB_ROUTER_TEMPLATE(query)
     response = ollama.chat(
-        model="ladder_llama3.1",
-        messages=template
+        model="llama3.1",
+        messages=template,
+        options={
+            "temperature": 0.1
+        }
     )
     answer = response['message']['content'].lower()
     
@@ -74,14 +80,18 @@ def Run_Web_RAG(chat_history, follow_up_question, query):
     for title, url in zip(title_list, url_list):
         markdown_links += f"[{title}]({url})\n\n"
         
-    template = chat_history.copy()
+    template = chat_history.copy()[:-1] # remove the latest user message
     template = template + response_templates.WEB_RESPONSE_TEMPLATE(search_result, follow_up_question)
-    # template.append({"role": "user", "content":WEB_SEARCH_RESPONSE_TEMPLATE(search_result, follow_up_question)})
+
+    # print(template)
     
     response = ollama.chat(
-        model="ladder_llama3.1",
+        model="llama3.1",
         messages=template,
-        stream=True
+        stream=True,
+        options={
+            "temperature": 0.1
+        }
     )
 
     full_response = ""

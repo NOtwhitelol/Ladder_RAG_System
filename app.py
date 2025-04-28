@@ -51,10 +51,10 @@ def chat():
     if user_message.strip() == "/history":
         print(chat_history)
         return chat_history
-    
-    chat_history.append({"role": "user", "content": user_message})
 
     standalone_query = base.standalone_query_rewrite(chat_history, user_message)
+
+    chat_history.append({"role": "user", "content": user_message})
 
     return Response(RAG_Run(chat_history, user_message, standalone_query), content_type='text/plain')
 
