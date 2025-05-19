@@ -22,16 +22,16 @@ def RAG_Run(chat_history, follow_up_question, standalone_query):
             return web.Run_Web_RAG(chat_history, follow_up_question, query)
         else:
             print("Direct answer...\n")
-            return base.Run_Direct_RAG(chat_history, follow_up_question, standalone_query)
+            return base.Run_Direct_RAG(chat_history, follow_up_question)
 
 
 
 
 chat_history = [{"role": "system", 
-                    "content": """You are a helpful AI assistant on Ladder, an easy-to-use and professional tool for public to build visualize artificial neural network models.
-                    Provide clear and concise explanations, assist with troubleshooting, and guide users through Ladder's features, including model creation, training, and evaluation.
-                    Always prioritize accuracy and relevance, ensuring responses are practical and actionable. Avoid speculation and only provide information based on Ladder's capabilities and machine learning principles."""
-                }]
+"content": """You are a helpful AI assistant on Ladder, an easy-to-use and professional tool for public to build visualize artificial neural network models.
+Provide clear and concise explanations, assist with troubleshooting, and guide users through Ladder's features, including model creation, training, and evaluation.
+Always prioritize accuracy and relevance, ensuring responses are practical and actionable. Avoid speculation and only provide information based on Ladder's capabilities and machine learning principles."""
+}]
 
 
 

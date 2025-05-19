@@ -4,6 +4,11 @@ from langchain_community.vectorstores import FAISS
 from prompt_templates import response_templates, router_templates, rewrite_templates
 import ollama
 import json
+import faiss
+import pickle
+import torch
+from transformers import AutoTokenizer, AutoModel
+import numpy as np
 
 from dotenv import load_dotenv
 import os
@@ -29,25 +34,71 @@ def recursive_split(text, delimiter):
     
     return [before_delimiter] + recursive_split(after_delimiter, delimiter)
 
-# Build FAISS database from metadata
-def build_vector_store(metadata_list):
-    docs = []
-    for i, meta in enumerate(metadata_list):
-        docs.append(
-            Document(
-                page_content=json.dumps({
-                    "title": meta["title"], 
-                    "summary": meta["summary"],
-                    "section": meta["section"]
-                })
-            )
-        )
-    db = FAISS.from_documents(docs, embedding_model)
-    return db
-
 def get_corresponding_document(indices, documents):
     return ["### " + documents[int(i)] for i in indices if int(i) < len(documents)]
 
+class DocumentEmbedder:
+    def __init__(self, model_name="intfloat/multilingual-e5-large-instruct"):
+        print(f"Loading embedding model: {model_name}")
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModel.from_pretrained(model_name)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"Using device: {self.device}")
+        self.model.to(self.device)
+        
+    def embed_query(self, query):
+        """Generate embedding for a query"""
+        # E5 models expect "query: " prefix for queries
+        input_text = f"query: {query}"
+        
+        encoded_input = self.tokenizer(
+            input_text, 
+            padding=True, 
+            truncation=True, 
+            max_length=512, 
+            return_tensors="pt"
+        ).to(self.device)
+        
+        with torch.no_grad():
+            outputs = self.model(**encoded_input)
+            # Mean pooling
+            attention_mask = encoded_input['attention_mask']
+            input_mask_expanded = attention_mask.unsqueeze(-1).expand(outputs.last_hidden_state.size()).float()
+            sum_embeddings = torch.sum(outputs.last_hidden_state * input_mask_expanded, 1)
+            sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+            embedding = sum_embeddings / sum_mask
+            
+        return embedding.cpu().numpy()
+
+class FAISSVectorStore:
+    def __init__(self, index_path="faiss_db/index.faiss", documents_path="faiss_db/documents.pkl"):
+        """Load the FAISS index and documents"""
+        print(f"Loading FAISS index from {index_path}")
+        self.index = faiss.read_index(index_path)
+        with open(documents_path, 'rb') as f:
+            self.documents = pickle.load(f)
+        print(f"Loaded {len(self.documents)} documents")
+        
+        # Initialize embedder
+        self.embedder = DocumentEmbedder()
+    
+    def similarity_search(self, query, k=6):
+        """Search for similar documents and return sections"""
+        # Get query embedding
+        query_embedding = self.embedder.embed_query(query)
+        
+        # Search in the index
+        distances, indices = self.index.search(query_embedding, k)
+        
+        # Get matching sections
+        matched_sections = []
+        for i, idx in enumerate(indices[0]):
+            if idx != -1 and idx < len(self.documents):
+                doc = json.loads(self.documents[idx])
+                if "section" in doc:
+                    matched_sections.append(doc["section"])
+                    
+        return matched_sections
 
 json_path = "docs/metadata.json"
 md_path = "docs/Ladder_RAG_document.md"
@@ -56,24 +107,33 @@ metadata_list = load_metadata(json_path)
 md_text = load_markdown(md_path)
 document_list = recursive_split(md_text, "###")
 
-embedding_model = HuggingFaceInferenceAPIEmbeddings(
-    api_key=HUGGING_FACE_TOKEN,
-    model_name="intfloat/multilingual-e5-small"
-)
+# embedding_model = HuggingFaceInferenceAPIEmbeddings(
+#     api_key=HUGGING_FACE_TOKEN,
+#     model_name="intfloat/multilingual-e5-large-instruct"
+# )
 
+# db = FAISS.load_local(
+#     folder_path="faiss_db",
+#     embeddings=embedding_model,
+#     allow_dangerous_deserialization=True
+# )
 
-db = build_vector_store(metadata_list)
+# def search_DB(query, db):
+#     search_results = db.similarity_search(query, k=6)
 
-def search_DB(query, db):
-    search_results = db.similarity_search(query, k=6)
-
-    matched_sections = []
-    for result in search_results:
-        result_data = json.loads(result.page_content)
-        if "section" in result_data:
-            matched_sections.append(result_data["section"])
+#     matched_sections = []
+#     for result in search_results:
+#         result_data = json.loads(result.page_content)
+#         if "section" in result_data:
+#             matched_sections.append(result_data["section"])
             
-    return matched_sections
+#     return matched_sections
+
+db = FAISSVectorStore()
+
+def search_DB(query, db=db):
+    """Search the database for similar documents"""
+    return db.similarity_search(query, k=6)
 
 def DB_search_router(query):
     section_indices = search_DB(query, db)
@@ -89,8 +149,8 @@ def DB_search_router(query):
             model="llama3.1",
             messages=template,
             options={
-            "temperature": 0.1
-        }
+                "temperature": 0.1
+            }
         )
         answer = response['message']['content'].lower()
         
@@ -103,7 +163,7 @@ def DB_search_router(query):
 
 def Run_DB_RAG(chat_history, follow_up_question, related_section_indices):
     related_document_list = get_corresponding_document(related_section_indices, document_list)
-    documents = "\n\n---\n\n".join("### " + document for document in related_document_list)
+    documents = "\n\n---\n\n".join(document for document in related_document_list)
     print(f"Related Documents: \n{documents}\n")
 
     template = chat_history.copy()[:-1] # remove the latest user message

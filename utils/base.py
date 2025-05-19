@@ -7,7 +7,7 @@ def standalone_query_rewrite(chat_history, query):
         model="llama3.1",
         messages=rewrite_templates.STANDALONE_QUESTION_REWRITE_TEMPLATE(chat_history, query),
         options={
-            "temperature": 0.1
+            "temperature": 0
         }
     )
     print(f"Rewrite Query: {response['message']['content']}")
@@ -17,7 +17,8 @@ def standalone_query_rewrite(chat_history, query):
         return data["question"]
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         print(f"Error parsing rewritten query: {e}")
-        return query  # Return the original query as a fallback
+        print(f"Return the rewrite query without JSONify: {response['message']['content']}")
+        return response['message']['content']  # Return the rewrite query without JSONify
 
 def Router(query):
     template = router_templates.ROUTER_TEMPLATE(query)
@@ -41,7 +42,7 @@ def Router(query):
         return Router(query)
 
 
-def Run_Direct_RAG(chat_history, follow_up_question, standalone_query):
+def Run_Direct_RAG(chat_history, follow_up_question):
     template = chat_history.copy()[:-1] # remove the latest user message
     template.append({"role": "user", "content": follow_up_question})
     

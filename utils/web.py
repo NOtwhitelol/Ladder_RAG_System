@@ -21,13 +21,11 @@ def Web_query_rewrite(query):
     )
     try:
         answer = json.loads(response['message']['content'])
-        
-        query = answer["query"]
-        return query
-        
-    except (json.JSONDecodeError, KeyError):
-        print("Invalid web query rewrite format, retrying...")
-        return Web_query_rewrite(query)
+        return answer["query"]        
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error parsing rewritten query: {e}")
+        print(f"Return the rewrite query without JSONify: {response['message']['content']}")
+        return response['message']['content']  # Return the rewrite query without JSONify
 
 
 def Web_search_router(query):

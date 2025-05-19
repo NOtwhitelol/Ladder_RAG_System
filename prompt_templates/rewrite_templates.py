@@ -1,9 +1,9 @@
 def STANDALONE_QUESTION_REWRITE_TEMPLATE(chat_history, follow_up_question):
     context = "\n".join([f"**{item['role']}:**\n```\n{item['content']}\n```\n" for item in chat_history])
 
-    return [{"role": "user", "content":
+    return [{"role": "system", "content":
 f"""Given a chat history and a follow up question, which might reference context in the chat history.
-Formulate a standalone question, which can be understood without the chat history.
+Help user formulate a standalone question, which can be understood without the chat history.
 Do NOT answer the question, just reformulate it if needed and otherwise return it as is.
 
 Your response will be a JSON object with the following format:
@@ -320,17 +320,22 @@ y軸（藍色）顯示學習率，決定了優化器在尋找最佳權重時的�
 ```
 
 ---
-Remember: Your response will be a JSON object with the following format:
+Remember: You should help user formulate a standalone question, which can be understood without the chat history.
+Do NOT answer the question, just reformulate it if needed and otherwise return it as is.
+Your response will be a JSON object with the following format:
 {{"question": "rewritten standalone question"}}
+"""},
 
-### {{Demonstrate}}
+{"role": "user", "content":
+f""" Formulate a standalone question, which can be understood without the chat history.
 - CHAT HISTORY: 
 {context}
 
 - FOLLOW UP QUESTION:
 {follow_up_question}
 
-- STANDALONE QUESTION:"""},
+- STANDALONE QUESTION:
+"""},
 ]
 
 

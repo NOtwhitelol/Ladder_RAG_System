@@ -10,31 +10,28 @@
     /* -------------------------
        Main UI (Ladder-like) Styles
        ------------------------- */
-    body {
+    body, html {
       margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
       font-family: Arial, sans-serif;
-      background: #f0f2f5;
     }
-    header {
-      background-color: #007bff;
-      color: #fff;
-      padding: 15px;
-      text-align: center;
+    
+    /* Full-height iframe to contain the Ladder website */
+    .website-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 1;
     }
-    nav {
-      background-color: #0056b3;
-      padding: 10px;
-      display: flex;
-      justify-content: space-around;
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .container {
-      padding: 20px;
+    
+    .website-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
 
     /* Chat Button Style */
@@ -54,6 +51,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      z-index: 1000; /* Ensure it's above the iframe */
     }
 
     .chat-button:hover {
@@ -78,7 +76,7 @@
     .modal {
       display: none; /* Hidden by default */
       position: fixed;
-      z-index: 1000;
+      z-index: 2000; /* Higher than the button */
       left: 0;
       top: 0;
       width: 100%;
@@ -309,19 +307,19 @@
 </head>
 <body>
 
-  <!-- Existing Ladder Website Content -->
-  <div class="content">
-    <iframe src="https://cssa.cc.ncku.edu.tw/ladder/app/en/" width="100%" height="915px" frameborder="0"></iframe>
+  <!-- Embedded Ladder Website -->
+  <div class="website-container">
+    <iframe src="https://cssa.cc.ncku.edu.tw/ladder/app/en/" frameborder="0"></iframe>
   </div>
 
   <!-- Chat Button -->
-  <button class="chat-button" id="openChatBtn">Chat</button>
+  <button class="chat-button" id="openChatBtn"></button>
 
   <!-- Chat Modal -->
   <div id="chatModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Chat</h2>
+        <h2>Ladder</h2>
         <span class="close" id="closeChatBtn">&times;</span>
       </div>
       <div class="chat-container">

@@ -4,6 +4,9 @@ f"""You are an expert at routing a user question to a vectorstore or web search.
 The vectorstore contains documents related to "Ladder" and "NOM", a tool designed to build visualize artificial neural networks.
 Use the vectorstore for questions on these topics. Otherwise, use web search.
 
+If the user explicitly says or implies that they want to "search the internet", "look online", "use web search", or asks about information that is likely outside the scope of Ladder or NOM, then you must choose web search—even if it overlaps slightly with those topics.
+Always prioritize the user's explicit intent, even if it overrides topic-based routing.
+
 Your response will be a JSON object with the following format.
 {{"tool": "vectorstore" or "web search"}}
 
@@ -133,7 +136,7 @@ Answer: {{"tool": "vectorstore"}}
 Question: Can NOM be used to build recurrent neural networks?
 Answer: {{"tool": "vectorstore"}}
 
-Question: What is the difference between Ladder and other deep learning platforms
+Question: Ladder 與其他深度學習平台有何不同?
 Answer: {{"tool": "vectorstore"}}
 
 Question: How can I visualize weight distributions?
@@ -142,7 +145,7 @@ Answer: {{"tool": "vectorstore"}}
 Question: How do I debug a model that is not converging?
 Answer: {{"tool": "web search"}}
 
-Question: How do I evaluate model accuracy?
+Question: 如何評估我的模型準確性？
 Answer: {{"tool": "vectorstore"}}
 
 Question: What are the pre-built templates available in Ladder
@@ -160,7 +163,7 @@ Answer: {{"tool": "vectorstore"}}
 Question: What are the key components of a Ladder model development workflow?
 Answer: {{"tool": "vectorstore"}}
 
-Question: What is the difference between Adam and SGD optimizers
+Question: Adam 和 SGD 優化器有什麼差別
 Answer: {{"tool": "web search"}}
 
 Question: What loss functions can I use?
@@ -172,13 +175,13 @@ Answer: {{"tool": "web search"}}
 Question: Does the platform support multi-GPU training
 Answer: {{"tool": "vectorstore"}}
 
-Question: How do I debug a model that is not converging?
+Question: 上網搜尋最新的Transformer研究發現
 Answer: {{"tool": "web search"}}
 
 Question: Is there a way to automate hyperparameter tuning
 Answer: {{"tool": "vectorstore"}}
 
-Question: Can I train a reinforcement learning model?
+Question: 我可以訓練強化學習模型嗎？
 Answer: {{"tool": "vectorstore"}}
 
 Question: How does batch normalization improve deep learning models
@@ -226,6 +229,8 @@ Answer: {{"tool": "vectorstore"}}
 Question: How do I integrate external datasets?
 Answer: {{"tool": "vectorstore"}}
 
+Question: 上網搜尋LSTM相關的論文
+Answer: {{"tool": "web search"}}
 Question: What do activation functions do?
 Answer: {{"tool": "web search"}}
 
