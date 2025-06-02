@@ -1,6 +1,3 @@
-from langchain.schema import Document
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-from langchain_community.vectorstores import FAISS
 from prompt_templates import response_templates, router_templates, rewrite_templates
 import ollama
 import json
@@ -12,9 +9,19 @@ import numpy as np
 
 from dotenv import load_dotenv
 import os
+import re
 
 load_dotenv()
 HUGGING_FACE_TOKEN = os.getenv("HUGGING_FACE_TOKEN")
+MODEL_NAME = "phi4:14b"
+
+def clean_json_string(s):
+    s = s.strip()
+    if s.startswith("```json"):
+        s = s.removeprefix("```json").strip()
+    if s.endswith("```"):
+        s = s.removesuffix("```").strip()
+    return s
 
 def load_metadata(json_path):
     with open(json_path, 'r', encoding='utf-8') as file:
@@ -107,36 +114,14 @@ metadata_list = load_metadata(json_path)
 md_text = load_markdown(md_path)
 document_list = recursive_split(md_text, "###")
 
-# embedding_model = HuggingFaceInferenceAPIEmbeddings(
-#     api_key=HUGGING_FACE_TOKEN,
-#     model_name="intfloat/multilingual-e5-large-instruct"
-# )
-
-# db = FAISS.load_local(
-#     folder_path="faiss_db",
-#     embeddings=embedding_model,
-#     allow_dangerous_deserialization=True
-# )
-
-# def search_DB(query, db):
-#     search_results = db.similarity_search(query, k=6)
-
-#     matched_sections = []
-#     for result in search_results:
-#         result_data = json.loads(result.page_content)
-#         if "section" in result_data:
-#             matched_sections.append(result_data["section"])
-            
-#     return matched_sections
-
 db = FAISSVectorStore()
 
 def search_DB(query, db=db):
     """Search the database for similar documents"""
     return db.similarity_search(query, k=6)
 
-def DB_search_router(query):
-    section_indices = search_DB(query, db)
+def DB_search_router(standalone_query):
+    section_indices = search_DB(standalone_query, db)
     print(f"Top 6 sections: {section_indices}\n")
 
     source_documents = get_corresponding_document(section_indices, document_list)
@@ -144,13 +129,11 @@ def DB_search_router(query):
     related_section_indices = []
 
     for index, document in zip(section_indices, source_documents):
-        template = router_templates.DB_ROUTER_TEMPLATE(document, query)
+        template = router_templates.DB_ROUTER_TEMPLATE(document, standalone_query)
         response = ollama.chat(
-            model="llama3.1",
+            model=MODEL_NAME,
             messages=template,
-            options={
-                "temperature": 0.1
-            }
+            options={"temperature": 0.1}
         )
         answer = response['message']['content'].lower()
         
@@ -161,30 +144,46 @@ def DB_search_router(query):
     print(f"Related sections: {related_section_indices}")
     return related_section_indices
 
-def Run_DB_RAG(chat_history, follow_up_question, related_section_indices):
+def Run_DB_RAG(chat_history, original_user_query, related_section_indices):
     related_document_list = get_corresponding_document(related_section_indices, document_list)
     documents = "\n\n---\n\n".join(document for document in related_document_list)
     print(f"Related Documents: \n{documents}\n")
 
     template = chat_history.copy()[:-1] # remove the latest user message
-    template = template + response_templates.DB_RESPONSE_TEMPLATE(documents, follow_up_question)
+    template = template + response_templates.DB_RESPONSE_TEMPLATE(documents, original_user_query)
 
     # print(template)
 
     response = ollama.chat(
-        model="llama3.1",
+        model=MODEL_NAME,
         messages=template,
         stream=True,
-        options={
-            "temperature": 0.1
-        }
+        options={"temperature": 0.1}
     )
 
     full_response = ""
+    response_started = False
+    thinking_section = ""
 
-    for chunk in response:
-        message = chunk['message']['content']
+# When using a normal LLM
+    for chunk in response:    
+        message = chunk['message']['content']        
         full_response += message
         yield message
+# When using an LLM with think mode
+    # for chunk in response:
+    #     message = chunk['message']['content']
+    #     if not response_started:
+    #         thinking_section += message
+    #         end_tag = "</think>"
+    #         if end_tag in thinking_section:
+    #             # Strip out the <think>...</think> block
+    #             think_match = re.search(r"<think>(.*?)</think>", thinking_section, flags=re.DOTALL)
+    #             if think_match:
+    #                 print("Thinking section:", think_match.group(1).strip())
+    #             response_started = True
+    #     else:
+    #         full_response += message
+    #         yield message
 
     chat_history.append({"role": "assistant", "content": full_response})

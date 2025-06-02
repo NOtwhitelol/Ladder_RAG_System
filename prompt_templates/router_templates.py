@@ -7,7 +7,7 @@ Use the vectorstore for questions on these topics. Otherwise, use web search.
 If the user explicitly says or implies that they want to "search the internet", "look online", "use web search", or asks about information that is likely outside the scope of Ladder or NOM, then you must choose web search—even if it overlaps slightly with those topics.
 Always prioritize the user's explicit intent, even if it overrides topic-based routing.
 
-Your response will be a JSON object with the following format.
+Your response will be only a JSON object with the following format, do not provide further explanation.
 {{"tool": "vectorstore" or "web search"}}
 
 ---
@@ -240,6 +240,8 @@ Answer: {{"tool": "vectorstore"}}
 Question: Tell me about an example usage of CNN model
 Answer: {{"tool": "web search"}}
 ---
+Remember: Your response will be only the JSON object, do not provide further explanation.
+
 ### {{Demonstration}} 
 Question: {query}
 Answer: """},
@@ -273,7 +275,7 @@ def WEB_ROUTER_TEMPLATE(query):
 f"""You are an helpful ai assistant. You have access to a search tool. Use the search tool in the following circumstances:
 - When the question pertains to current events or requires real-time information (e.g., news, researchs, specific dates).
 - When the question involves a term you are unfamiliar with.
-- When the question explicitly asks you to browse or provide links to references.
+- When the question explicitly asks you to search the internet fot the answer.
 
 Determine whether the search tool is needed to answer the given question. Respond with only 'yes' or 'no'.
 ---
@@ -399,6 +401,7 @@ Question: 翻譯成中文
 Answer: no
 
 ---
+Remember: Respond with only 'yes' or 'no', do not provide further explanation.
 ### {{Demonstrate}}:
 Question: {query}
 Answer: """},
