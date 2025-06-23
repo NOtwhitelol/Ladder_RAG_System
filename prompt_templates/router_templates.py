@@ -231,6 +231,7 @@ Answer: {{"tool": "vectorstore"}}
 
 Question: 上網搜尋LSTM相關的論文
 Answer: {{"tool": "web search"}}
+
 Question: What do activation functions do?
 Answer: {{"tool": "web search"}}
 

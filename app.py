@@ -1,32 +1,8 @@
 from flask import Flask, render_template, request, Response
+
 from utils import base, database, web
 
-def RAG_Run(chat_history, original_user_query):
-    # print("Running")
-    standalone_query = base.standalone_query_rewrite(chat_history, original_user_query)
-
-    if base.Router(standalone_query):
-        print("Closed domain query\n")
-        related_section_indices = database.DB_search_router(standalone_query)
-
-        if len(related_section_indices) > 0:
-            print("Using database...\n")
-            return database.Run_DB_RAG(chat_history, original_user_query, related_section_indices)
-        else:
-            chat_history.append({"role": "assistant", "content": "Unable to answer."})
-            return "Unable to answer."
-    else:
-        print("Open domain query\n")
-        if web.Web_search_router(standalone_query):
-            web_rewrite_query = web.Web_query_rewrite(standalone_query)
-            print("Searching web...\n")
-            return web.Run_Web_RAG(chat_history, original_user_query, web_rewrite_query)
-        else:
-            print("Direct answer...\n")
-            return base.Run_Direct_RAG(chat_history, original_user_query)
-
-
-
+app = Flask(__name__)
 
 chat_history = [{"role": "system", 
 "content": """You are a helpful AI assistant on Ladder, an easy-to-use and professional tool for public to build visualize artificial neural network models.
@@ -34,10 +10,28 @@ Provide clear and concise explanations, assist with troubleshooting, and guide u
 Always prioritize accuracy and relevance, ensuring responses are practical and actionable. Avoid speculation and only provide information based on Ladder's capabilities and machine learning principles."""
 }]
 
+def run_rag_pipeline(chat_history, original_user_query):
+    standalone_query = base.generate_standalone_query(chat_history, original_user_query)
 
+    if base.is_close_domain_query(standalone_query):
+        print("[Closed domain query]\n")
+        related_section_indices = database.search_db_sections(standalone_query)
 
-
-app = Flask(__name__)
+        if len(related_section_indices) > 0:
+            print("Using database...\n")
+            return database.run_db_rag(chat_history, original_user_query, related_section_indices)
+        else:
+            chat_history.append({"role": "assistant", "content": "Unable to answer."})
+            return "Unable to answer."
+    else:
+        print("[Open domain query]\n")
+        if web.should_use_web_search(standalone_query):
+            web_rewrite_query = web.rewrite_web_query(standalone_query)
+            print("Searching web...\n")
+            return web.run_web_rag(chat_history, original_user_query, web_rewrite_query)
+        else:
+            print("Direct answer...\n")
+            return base.direct_response(chat_history, original_user_query)
 
 @app.route('/')
 def index():
@@ -55,7 +49,7 @@ def chat():
 
     chat_history.append({"role": "user", "content": user_message})
 
-    return Response(RAG_Run(chat_history, user_message), content_type='text/plain')
+    return Response(run_rag_pipeline(chat_history, user_message), content_type='text/plain')
 
 if __name__ == '__main__':
     app.run(debug=True)

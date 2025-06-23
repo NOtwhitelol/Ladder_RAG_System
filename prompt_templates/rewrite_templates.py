@@ -252,6 +252,39 @@ Alternatively, after executing the Python file generated through NOM and the pro
 {{"question": "近期機器學習相關新聞"}}
 ```
 
+### Example 8:
+- CHAT HISTORY: 
+**user:**
+```
+怎麼訓練我的模型
+```
+
+**assistant**
+```
+你可以在Ladder的右側工具箱中調整訓練參數和超參數，包括epoch數、交叉驗證類型、追蹤頻率、批次大小、資料洗牌、記錄頻率、儲存頻率、測試頻率、權重頻率、跟蹤計數和跟蹤頻率等。當你完成模型編輯後，可以點擊右上角的「Project」按鈕，將專案儲存為NOM格式（project.json）或Python腳本（train.py）。如果你想立即訓練模型，可以點擊右下角的「Train Now」按鈕，按照指示進行。
+```
+
+**user:**
+```
+我訓練完模型了 該怎麼查看結果
+```
+
+**assistant:**
+```
+你可以點擊右下角的「Open a results folder」按鈕，將你的訓練結果上傳到Ladder中。然後，你就可以在Ladder中檢視你的訓練記錄和追蹤記錄。
+
+```
+
+- FOLLOW UP USER QUESTION: 
+```
+上網搜尋CNN相關論文
+```
+
+- STANDALONE QUESTION: 
+```
+{{"question": "上網搜尋CNN相關論文"}}
+```
+
 ---
 Remember: Your task is to help user formulate a standalone question, which can be understood without the chat history.
 Do NOT answer the question, just reformulate it if needed and otherwise return it as is.

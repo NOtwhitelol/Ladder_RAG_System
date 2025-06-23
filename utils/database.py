@@ -1,21 +1,25 @@
-from prompt_templates import response_templates, router_templates, rewrite_templates
-import ollama
-import json
-import faiss
-import pickle
-import torch
-from transformers import AutoTokenizer, AutoModel
-import numpy as np
-
-from dotenv import load_dotenv
 import os
-import re
+import json
+import pickle
 
+import ollama
+import faiss
+import torch
+
+from transformers import AutoTokenizer, AutoModel
+from dotenv import load_dotenv
+from prompt_templates import response_templates, router_templates, rewrite_templates
+
+
+# --- Configuration ---
 load_dotenv()
 HUGGING_FACE_TOKEN = os.getenv("HUGGING_FACE_TOKEN")
 MODEL_NAME = "phi4:14b"
 
+
+# --- Utilities ---
 def clean_json_string(s):
+    """Remove code block formatting from LLM-generated JSON"""
     s = s.strip()
     if s.startswith("```json"):
         s = s.removeprefix("```json").strip()
@@ -24,26 +28,27 @@ def clean_json_string(s):
     return s
 
 def load_metadata(json_path):
-    with open(json_path, 'r', encoding='utf-8') as file:
-        return json.load(file)
+    with open(json_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 def load_markdown(md_path):
-    with open(md_path, 'r', encoding='utf-8') as file:
-        return file.read()
+    with open(md_path, 'r', encoding='utf-8') as f:
+        return f.read()
 
 def recursive_split(text, delimiter):
     if delimiter not in text:
         return [text]
-    
     split_index = text.index(delimiter)
     before_delimiter = text[:split_index].strip()
     after_delimiter = text[split_index + len(delimiter):].strip()
-    
     return [before_delimiter] + recursive_split(after_delimiter, delimiter)
 
 def get_corresponding_document(indices, documents):
+    """Return matched document content prefixed with headers"""
     return ["### " + documents[int(i)] for i in indices if int(i) < len(documents)]
 
+
+# --- Embedding ---
 class DocumentEmbedder:
     def __init__(self, model_name="intfloat/multilingual-e5-large-instruct"):
         print(f"Loading embedding model: {model_name}")
@@ -54,10 +59,8 @@ class DocumentEmbedder:
         self.model.to(self.device)
         
     def embed_query(self, query):
-        """Generate embedding for a query"""
-        # E5 models expect "query: " prefix for queries
+        """Generate embedding for a query (E5 format)"""
         input_text = f"query: {query}"
-        
         encoded_input = self.tokenizer(
             input_text, 
             padding=True, 
@@ -68,7 +71,6 @@ class DocumentEmbedder:
         
         with torch.no_grad():
             outputs = self.model(**encoded_input)
-            # Mean pooling
             attention_mask = encoded_input['attention_mask']
             input_mask_expanded = attention_mask.unsqueeze(-1).expand(outputs.last_hidden_state.size()).float()
             sum_embeddings = torch.sum(outputs.last_hidden_state * input_mask_expanded, 1)
@@ -77,36 +79,32 @@ class DocumentEmbedder:
             
         return embedding.cpu().numpy()
 
+
+# --- Vector Store ---
 class FAISSVectorStore:
     def __init__(self, index_path="faiss_db/index.faiss", documents_path="faiss_db/documents.pkl"):
-        """Load the FAISS index and documents"""
         print(f"Loading FAISS index from {index_path}")
         self.index = faiss.read_index(index_path)
         with open(documents_path, 'rb') as f:
             self.documents = pickle.load(f)
         print(f"Loaded {len(self.documents)} documents")
-        
-        # Initialize embedder
         self.embedder = DocumentEmbedder()
     
     def similarity_search(self, query, k=6):
-        """Search for similar documents and return sections"""
-        # Get query embedding
+        """Return top-k most similar document sections"""
         query_embedding = self.embedder.embed_query(query)
-        
-        # Search in the index
         distances, indices = self.index.search(query_embedding, k)
         
-        # Get matching sections
         matched_sections = []
         for i, idx in enumerate(indices[0]):
             if idx != -1 and idx < len(self.documents):
                 doc = json.loads(self.documents[idx])
                 if "section" in doc:
                     matched_sections.append(doc["section"])
-                    
         return matched_sections
 
+
+# --- Load Documents ---
 json_path = "docs/metadata.json"
 md_path = "docs/Ladder_RAG_document.md"
 
@@ -114,45 +112,46 @@ metadata_list = load_metadata(json_path)
 md_text = load_markdown(md_path)
 document_list = recursive_split(md_text, "###")
 
+
+# --- FAISS DB Instance ---
 db = FAISSVectorStore()
 
-def search_DB(query, db=db):
-    """Search the database for similar documents"""
-    return db.similarity_search(query, k=6)
 
-def DB_search_router(standalone_query):
-    section_indices = search_DB(standalone_query, db)
-    print(f"Top 6 sections: {section_indices}\n")
+# --- RAG Pipeline Functions ---
+def search_DB(query, db_instance=db):
+    """Search the vectorstore for relevant document section names"""
+    return db_instance.similarity_search(query, k=6)
 
-    source_documents = get_corresponding_document(section_indices, document_list)
+def search_db_sections(standalone_query):
+    """Filter top 6 sections using LLM to keep the most relevant (up to 3)"""
+    top_sections = search_DB(standalone_query)
+    print(f"Top 6 sections: {top_sections}\n")
+    source_docs = get_corresponding_document(top_sections, document_list)
 
-    related_section_indices = []
+    relevant_indices = []
 
-    for index, document in zip(section_indices, source_documents):
-        template = router_templates.DB_ROUTER_TEMPLATE(document, standalone_query)
+    for idx, doc in zip(top_sections, source_docs):
+        prompt = router_templates.DB_ROUTER_TEMPLATE(doc, standalone_query)
         response = ollama.chat(
             model=MODEL_NAME,
-            messages=template,
+            messages=prompt,
             options={"temperature": 0.1}
         )
         answer = response['message']['content'].lower()
         
         if 'yes' in answer:
-            related_section_indices.append(index)
-            if len(related_section_indices) == 3:
+            relevant_indices.append(idx)
+            if len(relevant_indices) == 3:
                 break
-    print(f"Related sections: {related_section_indices}")
-    return related_section_indices
+    print(f"Related sections: {relevant_indices}")
+    return relevant_indices
 
-def Run_DB_RAG(chat_history, original_user_query, related_section_indices):
-    related_document_list = get_corresponding_document(related_section_indices, document_list)
-    documents = "\n\n---\n\n".join(document for document in related_document_list)
-    print(f"Related Documents: \n{documents}\n")
+def run_db_rag(chat_history, original_user_query, relevant_indices):
+    relevant_document_list = get_corresponding_document(relevant_indices, document_list)
+    documents = "\n\n---\n\n".join(document for document in relevant_document_list)
 
     template = chat_history.copy()[:-1] # remove the latest user message
     template = template + response_templates.DB_RESPONSE_TEMPLATE(documents, original_user_query)
-
-    # print(template)
 
     response = ollama.chat(
         model=MODEL_NAME,
@@ -162,28 +161,10 @@ def Run_DB_RAG(chat_history, original_user_query, related_section_indices):
     )
 
     full_response = ""
-    response_started = False
-    thinking_section = ""
 
-# When using a normal LLM
     for chunk in response:    
         message = chunk['message']['content']        
         full_response += message
         yield message
-# When using an LLM with think mode
-    # for chunk in response:
-    #     message = chunk['message']['content']
-    #     if not response_started:
-    #         thinking_section += message
-    #         end_tag = "</think>"
-    #         if end_tag in thinking_section:
-    #             # Strip out the <think>...</think> block
-    #             think_match = re.search(r"<think>(.*?)</think>", thinking_section, flags=re.DOTALL)
-    #             if think_match:
-    #                 print("Thinking section:", think_match.group(1).strip())
-    #             response_started = True
-    #     else:
-    #         full_response += message
-    #         yield message
 
     chat_history.append({"role": "assistant", "content": full_response})
